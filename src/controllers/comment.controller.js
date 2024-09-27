@@ -7,7 +7,6 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const getVideoComments = asyncHandler(async (req, res) => {
   //TODO: get all comments for a video
   const { videoId } = req.params;
-  const { page = 1, limit = 10 } = req.query;
 
   if (!isValidObjectId(videoId)) {
     throw new apiError(400, "invalid Video id");
@@ -21,7 +20,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: "User",
+        from: "users",
         localField: "owner",
         foreignField: "_id",
         as: "owner",
@@ -36,12 +35,6 @@ const getVideoComments = asyncHandler(async (req, res) => {
         ],
       },
     },
-    {
-        $skip: (page - 1) * limit 
-    },
-    {
-        $limit: parseInt(limit, 10)
-    }
   ]);
 
   if (!comments) {
