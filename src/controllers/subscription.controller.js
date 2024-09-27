@@ -43,13 +43,13 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
-
+  console.log(channelId);
+  
   if (!isValidObjectId(channelId)) {
     throw new apiError(400, "Invalid channel id");
   }
 
   const channel = await User.findById(channelId);
-
   if (!channel) {
     throw new apiError(404, "Channel not found");
   }
@@ -57,12 +57,12 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   const subscribers = await Subscription.aggregate([
     {
       $match: {
-        channel: new mongoose.Types.ObjectId(`${channelId}`),
+        channel: new mongoose.Types.ObjectId(channelId),
       },
     },
     {
       $lookup: {
-        from: "User",
+        from: "users", 
         localField: "subscriber",
         foreignField: "_id",
         as: "subscriber",
@@ -78,16 +78,17 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
       },
     },
     {
-        $project: {
-            subscriber: 1,
-        }
-    }
+      $project: {
+        subscriber: 1,
+      },
+    },
   ]);
 
   return res
-   .status(200)
-   .json(new apiResponse(200, subscribers, "Subscribers retrieved successfully"));
+    .status(200)
+    .json(new apiResponse(200, subscribers, "Subscribers retrieved successfully"));
 });
+
 
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
