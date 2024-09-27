@@ -27,6 +27,9 @@ import playlistRouter from "./routes/playlist.routes.js"
 import dashboardRouter from "./routes/dashboard.routes.js"
 
 //routes declaration
+app.get("/", (req, res) => {
+    res.json({ message:"Hello, Backend!" })
+})
 app.use("/api/v1/healthcheck", healthcheckRouter)
 app.use("/api/v1/users", userRouter)
 app.use("/api/v1/tweets", tweetRouter)
