@@ -112,10 +112,28 @@ const getLikedTweets = asyncHandler(async (req, res) => {
   );
 });
 
+const getLikedComments = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const likedComments = await Like.find({
+    likedBy: userId,
+    comment: { $ne: null },
+  }).populate("comment");
+
+  if (!likedComments) {
+    throw new apiError(400, "No liked comments found");
+  }
+
+  return res
+   .status(200)
+   .json(new apiResponse(200, likedComments, "Liked comments fetched successfully"));
+})
+
 export {
   toggleCommentLike,
   toggleTweetLike,
   toggleVideoLike,
   getLikedVideos,
   getLikedTweets,
+  getLikedComments,
 };
