@@ -1,5 +1,4 @@
 import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
 
 cloudinary.config({ 
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
@@ -7,25 +6,17 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET 
 });
 
-const uploadOnCloudinary = (filePath, fileName) => {
+const uploadOnCloudinary = (fileBuffer, fileName) => {
     return new Promise((resolve, reject) => {
-        const stream = fs.createReadStream(filePath);
-
-        stream.pipe(
-            cloudinary.uploader.upload_stream(
-                { resource_type: 'image', public_id: fileName },
-                (error, result) => {
-                    if (error) {
-                        return reject(error);
-                    }
-                    resolve(result);
+        cloudinary.uploader.upload_stream(
+            { resource_type: 'image', public_id: fileName },
+            (error, result) => {
+                if (error) {
+                    return reject(error);
                 }
-            )
-        );
-
-        stream.on("error", (error) => {
-            reject(error);
-        });
+                resolve(result);
+            }
+        ).end(fileBuffer);
     });
 };
 

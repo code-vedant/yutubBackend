@@ -4,7 +4,6 @@ import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { promises as fs } from "fs";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
@@ -39,49 +38,47 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
-  const thumbnailLocalPath = req.files?.thumbnail[0].path;
-  const videoLocalPath = req.files?.videoFile[0].path;
+  const thumbnailBuffer = req.files?.thumbnail[0].buffer; 
+  const videoBuffer = req.files?.videoFile[0].buffer;
 
   if (!title) {
-    throw new apiError("Please provide a title");
+      throw new apiError("Please provide a title");
   }
   if (!description) {
-    throw new apiError("Please provide a description");
+      throw new apiError("Please provide a description");
   }
 
-  if (!thumbnailLocalPath) {
-    throw new apiError("Thumbnail is required");
+  if (!thumbnailBuffer) {
+      throw new apiError("Thumbnail is required");
   }
-  if (!videoLocalPath) {
-    throw new apiError("Video is required");
+  if (!videoBuffer) {
+      throw new apiError("Video is required");
   }
 
-  const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
-  const video = await uploadOnCloudinary(videoLocalPath);
+  const thumbnail = await uploadOnCloudinary(thumbnailBuffer, `thumbnail_${title}`);
+  const video = await uploadOnCloudinary(videoBuffer, `video_${title}`);
 
   if (!thumbnail?.url) {
-    throw new apiError("Error while uploading thumbnail");
+      throw new apiError("Error while uploading thumbnail");
   }
   if (!video?.url) {
-    throw new apiError("Error while uploading video");
+      throw new apiError("Error while uploading video");
   }
 
   const newVideo = await Video.create({
-    title,
-    description,
-    thumbnail: thumbnail.url,
-    videoFile: video.url,
-    duration: video.duration,
-    owner: req.user._id,
+      title,
+      description,
+      thumbnail: thumbnail.url,
+      videoFile: video.url,
+      duration: video.duration,
+      owner: req.user._id,
   });
 
-  await fs.unlink(thumbnailLocalPath);
-  await fs.unlink(videoLocalPath);
-
   return res
-    .status(200)
-    .json(new apiResponse(200, newVideo, "Video uploaded successfully"));
+      .status(200)
+      .json(new apiResponse(200, newVideo, "Video uploaded successfully"));
 });
+
 
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -178,44 +175,43 @@ const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
   if (!videoId) {
-    throw new apiError(400, "Invalid video ID");
+      throw new apiError(400, "Invalid video ID");
   }
 
   const { title, description } = req.body;
-  const thumbnailLocalPath = req.file?.path;
+  const thumbnailBuffer = req.file?.buffer;
 
   if (!title) {
-    throw new apiError(401, "Please provide a title");
+      throw new apiError(401, "Please provide a title");
   }
   if (!description) {
-    throw new apiError(401, "Please provide a description");
+      throw new apiError(401, "Please provide a description");
   }
-  if (!thumbnailLocalPath) {
-    throw new apiError(401, "Updating error: Thumbnail is required");
+  if (!thumbnailBuffer) {
+      throw new apiError(401, "Updating error: Thumbnail is required");
   }
 
-  const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
+  const thumbnail = await uploadOnCloudinary(thumbnailBuffer, `thumbnail_${videoId}`);
 
   if (!thumbnail?.url) {
-    throw new apiError(500, "Error while uploading thumbnail");
+      throw new apiError(500, "Error while uploading thumbnail");
   }
 
   const video = await Video.findByIdAndUpdate(
-    videoId,
-    {
-      title,
-      description,
-      thumbnail: thumbnail.url,
-    },
-    { new: true }
+      videoId,
+      {
+          title,
+          description,
+          thumbnail: thumbnail.url,
+      },
+      { new: true }
   );
 
-  await fs.unlink(thumbnailLocalPath);
-
   return res
-    .status(200)
-    .json(new apiResponse(200, video, "Video updated successfully"));
+      .status(200)
+      .json(new apiResponse(200, video, "Video updated successfully"));
 });
+
 
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
