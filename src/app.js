@@ -4,7 +4,6 @@ import cookieParser from "cookie-parser"
 
 const app = express()
 
-const cors = require('cors');
 app.use(cors({
     origin: 'https://yutubapp.vercel.app',
     methods: ['GET', 'POST','PATCH', 'PUT', 'DELETE'],
