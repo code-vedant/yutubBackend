@@ -1,10 +1,10 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Video } from "../models/video.model.js";
-import { User } from "../models/user.model.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { promises as fs } from "fs";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
@@ -41,7 +41,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   const thumbnailLocalPath = req.files?.thumbnail[0].path;
   const videoLocalPath = req.files?.videoFile[0].path;
-  // TODO: get video, upload to cloudinary, create video
+
   if (!title) {
     throw new apiError("Please provide a title");
   }
@@ -49,7 +49,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     throw new apiError("Please provide a description");
   }
 
-  //  LOCALPATH
   if (!thumbnailLocalPath) {
     throw new apiError("Thumbnail is required");
   }
@@ -57,18 +56,16 @@ const publishAVideo = asyncHandler(async (req, res) => {
     throw new apiError("Video is required");
   }
 
-  // UPLOAD TO CLOUDINARY
   const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
   const video = await uploadOnCloudinary(videoLocalPath);
 
-  if (!thumbnail) {
+  if (!thumbnail?.url) {
     throw new apiError("Error while uploading thumbnail");
   }
-  if (!video) {
+  if (!video?.url) {
     throw new apiError("Error while uploading video");
   }
 
-  // CREATE VIDEO
   const newVideo = await Video.create({
     title,
     description,
@@ -77,6 +74,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
     duration: video.duration,
     owner: req.user._id,
   });
+
+  await fs.unlink(thumbnailLocalPath);
+  await fs.unlink(videoLocalPath);
 
   return res
     .status(200)
@@ -102,13 +102,11 @@ const getVideoById = asyncHandler(async (req, res) => {
     userObjectId = new mongoose.Types.ObjectId(req.user._id);
   }
 
-  // Increment the views field by 1
   await Video.updateOne(
     { _id: videoObjectId },
     { $inc: { views: 1 } }
   );
 
-  // Fetch the video data after incrementing views
   const video = await Video.aggregate([
     { $match: { _id: videoObjectId } },
     {
@@ -178,30 +176,28 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  //TODO: update video details like title, description, thumbnail
 
   if (!videoId) {
-    throw new apiError(400, "invalid Video id");
+    throw new apiError(400, "Invalid video ID");
   }
 
   const { title, description } = req.body;
   const thumbnailLocalPath = req.file?.path;
 
   if (!title) {
-    throw new apiError(401,"Please provide a title");
+    throw new apiError(401, "Please provide a title");
   }
   if (!description) {
-    throw new apiError(401,"Please provide a description");
+    throw new apiError(401, "Please provide a description");
   }
-
   if (!thumbnailLocalPath) {
-    throw new apiError(401,"Updating-Error : Thumbnail is required");
+    throw new apiError(401, "Updating error: Thumbnail is required");
   }
 
   const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
 
-  if (!thumbnail) {
-    throw new apiError("500,Error while uploading thumbnail");
+  if (!thumbnail?.url) {
+    throw new apiError(500, "Error while uploading thumbnail");
   }
 
   const video = await Video.findByIdAndUpdate(
@@ -214,15 +210,15 @@ const updateVideo = asyncHandler(async (req, res) => {
     { new: true }
   );
 
-  return res
-   .status(200)
-   .json(new apiResponse(200, video, "Video updated successfully"));
+  await fs.unlink(thumbnailLocalPath);
 
+  return res
+    .status(200)
+    .json(new apiResponse(200, video, "Video updated successfully"));
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  //TODO: delete video
   if (!videoId) {
     throw new apiError(400, "invalid Video id");
   }
