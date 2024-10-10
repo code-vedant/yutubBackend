@@ -15,7 +15,7 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://yutubapp.vercel.app"
+          "value": "https://yutubapp.netlify.app"
         },
         {
           "key": "Access-Control-Allow-Methods",
