@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser"
 const app = express()
 
 app.use(cors({
-    origin: 'https://yutubapp.netlify.app',
+    origin: "*",
     methods: ['GET', 'POST','PATCH', 'PUT', 'DELETE'],
     credentials: true
 }))

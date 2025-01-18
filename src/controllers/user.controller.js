@@ -75,7 +75,6 @@ const registerUser = asyncHandler(async (req, res) => {
     password,
     username: username.toLowerCase(),
   });
-
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
     user._id
   );
