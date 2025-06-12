@@ -1,22 +1,20 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Tweet } from "../models/tweet.model.js";
 import { User } from "../models/user.model.js";
-import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const createTweet = asyncHandler(async (req, res) => {
-  //TODO: create tweet
   const { content } = req.body;
 
   if (!content || content.trim() === "") {
-    throw new apiError(400, "Content is required & cannot be empty");
+    return res.status(400).json(new apiResponse(400, null, "Content is required & cannot be empty"));
   }
 
   const tweet = await Tweet.create({ content, owner: req.user._id });
 
   if (!tweet) {
-    throw new apiError(500, "Tweet creation failed");
+    return res.status(500).json(new apiResponse(500, null, "Tweet creation failed"));
   }
 
   return res
@@ -25,105 +23,97 @@ const createTweet = asyncHandler(async (req, res) => {
 });
 
 const getUserTweets = asyncHandler(async (req, res) => {
-  // TODO: get user tweets
   const { userId } = req.params;
 
   if (!isValidObjectId(userId)) {
-    throw new apiError(400, "invalid user id");
+    return res.status(400).json(new apiResponse(400, null, "Invalid user ID"));
   }
 
   const user = await User.findById(userId);
   if (!user) {
-    throw new apiError(404, "User not found");
+    return res.status(404).json(new apiResponse(404, null, "User not found"));
   }
 
   const tweets = await Tweet.aggregate([
     {
       $match: {
-        owner:new mongoose.Types.ObjectId(userId),
+        owner: new mongoose.Types.ObjectId(userId),
       },
     },
   ]);
 
   if (!tweets) {
-    throw new apiError(500, "Error while fetching tweets");
+    return res.status(500).json(new apiResponse(500, null, "Error while fetching tweets"));
   }
 
   return res
     .status(200)
-    .json(new apiResponse(200, tweets, "all tweets fetched successfully"));
+    .json(new apiResponse(200, tweets, "All tweets fetched successfully"));
 });
 
 const updateTweet = asyncHandler(async (req, res) => {
-  //TODO: update tweet
   const { tweetId } = req.params;
   const { content } = req.body;
 
   if (!content || content.trim() === "") {
-    throw new apiError(400, "Content cannot be empty");
+    return res.status(400).json(new apiResponse(400, null, "Content cannot be empty"));
   }
 
   if (!isValidObjectId(tweetId)) {
-    throw new apiError(400, "invalid tweet id");
+    return res.status(400).json(new apiResponse(400, null, "Invalid tweet ID"));
   }
 
   const tweet = await Tweet.findById(tweetId);
   if (!tweet) {
-    throw new apiError(404, "Tweet not found");
+    return res.status(404).json(new apiResponse(404, null, "Tweet not found"));
   }
 
   if (tweet.owner.toString() !== req.user._id.toString()) {
-    throw new apiError(401, "User is Unauthorized to update tweet");
+    return res.status(401).json(new apiResponse(401, null, "User is unauthorized to update this tweet"));
   }
 
-  const updateTweet = await Tweet.findByIdAndUpdate(
+  const updatedTweet = await Tweet.findByIdAndUpdate(
     tweetId,
     {
-      $set: {
-        content,
-      },
+      $set: { content },
     },
-    {
-      new: true,
-    }
+    { new: true }
   );
 
-  if (!updateTweet) {
-    throw new apiError(404, "Error while updating tweet");
+  if (!updatedTweet) {
+    return res.status(500).json(new apiResponse(500, null, "Error while updating tweet"));
   }
 
   return res
     .status(200)
-    .json(new apiResponse(200, updateTweet, "Tweet updated successfully"));
+    .json(new apiResponse(200, updatedTweet, "Tweet updated successfully"));
 });
 
 const deleteTweet = asyncHandler(async (req, res) => {
-  //TODO: delete tweet
   const { tweetId } = req.params;
 
   if (!isValidObjectId(tweetId)) {
-    throw new apiError(400, "invalid tweet id");
+    return res.status(400).json(new apiResponse(400, null, "Invalid tweet ID"));
   }
 
   const tweet = await Tweet.findById(tweetId);
   if (!tweet) {
-    throw new apiError(404, "Tweet not found");
+    return res.status(404).json(new apiResponse(404, null, "Tweet not found"));
   }
 
   if (tweet.owner.toString() !== req.user._id.toString()) {
-    throw new apiError(401, "User is Unauthorized to update tweet");
+    return res.status(401).json(new apiResponse(401, null, "User is unauthorized to delete this tweet"));
   }
 
-  const deleteTweet = await Tweet.findByIdAndDelete(tweetId);
+  const deletedTweet = await Tweet.findByIdAndDelete(tweetId);
 
-  if (!deleteTweet) {
-    throw new apiError(404, "Error while deleting tweet");
+  if (!deletedTweet) {
+    return res.status(500).json(new apiResponse(500, null, "Error while deleting tweet"));
   }
 
   return res
     .status(200)
-    .json(new apiResponse(200, deleteTweet, "Tweet deleted successfully"));
+    .json(new apiResponse(200, deletedTweet, "Tweet deleted successfully"));
 });
-
 
 export { createTweet, getUserTweets, updateTweet, deleteTweet };

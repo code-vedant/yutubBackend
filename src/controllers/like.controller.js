@@ -18,20 +18,15 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
   if (like) {
     await like.deleteOne();
-    return res
-      .status(200)
-      .json(new apiResponse(200, null, "Unliked the Video"));
+    return res.json(new apiResponse(200, null, "Unliked the video"));
   } else {
     const newLike = await Like.create({ video: videoId, likedBy: user });
-    return res
-      .status(200)
-      .json(new apiResponse(200, newLike, "Liked the Video"));
+    return res.json(new apiResponse(200, newLike, "Liked the video"));
   }
 });
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
-  //TODO: toggle like on comment
   const user = req.user._id;
 
   if (!isValidObjectId(commentId)) {
@@ -42,14 +37,10 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
   if (like) {
     await like.deleteOne();
-    return res
-      .status(200)
-      .json(new apiResponse(200, null, "Unliked the comment"));
+    return res.json(new apiResponse(200, null, "Unliked the comment"));
   } else {
     const newLike = await Like.create({ comment: commentId, likedBy: user });
-    return res
-      .status(200)
-      .json(new apiResponse(200, newLike, "Liked the comment"));
+    return res.json(new apiResponse(200, newLike, "Liked the comment"));
   }
 });
 
@@ -65,69 +56,39 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 
   if (like) {
     await like.deleteOne();
-    return res
-      .status(200)
-      .json(new apiResponse(200, null, "Unliked the tweet"));
+    return res.json(new apiResponse(200, null, "Unliked the tweet"));
   } else {
     const newLike = await Like.create({ tweet: tweetId, likedBy: user });
-    return res
-      .status(200)
-      .json(new apiResponse(200, newLike, "Liked the tweet"));
+    return res.json(new apiResponse(200, newLike, "Liked the tweet"));
   }
 });
 
 const getLikedVideos = asyncHandler(async (req, res) => {
-  //TODO: get all liked videos
-
   const likedVideos = await Like.find({
     likedBy: req.user._id,
     video: { $ne: null },
   }).populate("video");
 
-  if (!likedVideos) {
-    throw new apiError(400, "Error getting liked videos");
-  }
-
-  return res
-    .status(200)
-    .json(new apiResponse(200, likedVideos, "Success getting liked videos"));
+  return res.json(new apiResponse(200, likedVideos, "Success getting liked videos"));
 });
 
 const getLikedTweets = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-
   const likedTweets = await Like.find({
-    likedBy: userId,
+    likedBy: req.user._id,
     tweet: { $ne: null },
   }).populate("tweet");
 
-  if (!likedTweets) {
-    throw new apiError(400, "No liked tweets found");
-  }
-
-  return res
-  .status(200)
-  .json(new apiResponse(200,likedTweets,"Liked tweets fetched successfully"
-    )
-  );
+  return res.json(new apiResponse(200, likedTweets, "Liked tweets fetched successfully"));
 });
 
 const getLikedComments = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-
   const likedComments = await Like.find({
-    likedBy: userId,
+    likedBy: req.user._id,
     comment: { $ne: null },
   }).populate("comment");
 
-  if (!likedComments) {
-    throw new apiError(400, "No liked comments found");
-  }
-
-  return res
-   .status(200)
-   .json(new apiResponse(200, likedComments, "Liked comments fetched successfully"));
-})
+  return res.json(new apiResponse(200, likedComments, "Liked comments fetched successfully"));
+});
 
 export {
   toggleCommentLike,
