@@ -51,7 +51,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, video, "All video based on query"));
 });
 
-
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   const thumbnailBuffer = req.files?.thumbnail?.[0]?.buffer;

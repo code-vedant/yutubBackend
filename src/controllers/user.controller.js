@@ -1,45 +1,86 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
-import { cloudinary } from "../utils/cloudinary.js";
+import { cloudinary, uploadBufferToCloudinary } from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
-import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import generateAccessToken from "../utils/generateAccessToken.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { fullName, email, username, password } = req.body;
+  const avatar =  req.file;
 
-  if (!fullName || !email || !username || !password || [fullName, email, username, password].some(f => f.trim() === "")) {
-    return res.status(400).json({ success: false, message: "All fields are required" });
+  // Validate required fields
+  if (!fullName || !email || !username || !password || 
+      [fullName, email, username, password].some(f => f.trim() === "")) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "All fields are required" 
+    });
   }
 
-  const existedUser = await User.findOne({ $or: [{ email }, { username }] });
+  // Check if user already exists
+  const existedUser = await User.findOne({ 
+    $or: [{ email }, { username: username.toLowerCase() }] 
+  });
 
   if (existedUser) {
-    return res.status(400).json({ success: false, message: "Email or username already exists" });
+    return res.status(400).json({ 
+      success: false, 
+      message: "Email or username already exists" 
+    });
   }
 
+  // Handle avatar upload if provided
+  let avatarUrl = "";
+  if (avatar) {
+    try {
+      const avatarBuffer = avatar.buffer;
+      
+      if (!avatarBuffer) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid avatar file" 
+        });
+      }
+
+      // Upload to cloudinary using your helper function
+      const cloudinaryResult = await uploadBufferToCloudinary(avatarBuffer, "avatars");
+      avatarUrl = cloudinaryResult.secure_url;
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      return res.status(400).json({ 
+        success: false, 
+        message: "Avatar upload failed" 
+      });
+    }
+  }
+
+  // Create user
   const user = await User.create({
     fullName,
-    avatar: "",
+    avatar: avatarUrl,
     coverImage: "",
     email,
     password,
     username: username.toLowerCase(),
   });
 
+  // Generate access token
   const accessToken = generateAccessToken(user._id, res);
+  
+  // Get created user without sensitive fields
   const createdUser = await User.findById(user._id).select("-password -refreshToken");
 
   if (!createdUser) {
-    return res.status(500).json({ success: false, message: "User creation failed" });
+    return res.status(500).json({ 
+      success: false, 
+      message: "User creation failed" 
+    });
   }
 
-  return res.status(201).json({
-    success: true,
-    message: "User registered successfully",
-    data: { user: createdUser, accessToken },
-  });
+  return res.status(201).json(
+    new apiResponse(201, { user: createdUser, accessToken }, "User created successfully")
+  );
 });
 
 const loginUser = asyncHandler(async (req, res) => {
