@@ -1,6 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
-import { cloudinary, uploadBufferToCloudinary } from "../utils/cloudinary.js";
+import { uploadBufferToCloudinary } from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import mongoose from "mongoose";
 import generateAccessToken from "../utils/generateAccessToken.js";
@@ -154,7 +154,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: "Avatar is required" });
   }
 
-  const avatar = await cloudinary(avatarBuffer, `avatar_${req.user._id}`);
+  const avatar = await uploadBufferToCloudinary(avatarBuffer, "avatars");
   if (!avatar?.url) {
     return res.status(400).json({ success: false, message: "Error while uploading avatar" });
   }
@@ -170,7 +170,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: "Cover image is required" });
   }
 
-  const coverImage = await cloudinary(coverImageBuffer, `coverImage_${req.user._id}`);
+  const coverImage = await uploadBufferToCloudinary(coverImageBuffer, `coverImage_${req.user._id}`);
   if (!coverImage?.url) {
     return res.status(400).json({ success: false, message: "Error while uploading cover image" });
   }

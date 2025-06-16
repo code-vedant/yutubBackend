@@ -21,9 +21,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
       },
     });
   }
-
-  console.log(pipeline);
-  
   
   const sortField = sortBy || "createdAt";
   const sortOrder = sortType === "desc" ? -1 : 1;
@@ -31,9 +28,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
   pipeline.push({
     $sort: { [sortField]: sortOrder },
   });
-  
-  console.log(pipeline);
-
   
   const options = {
     page: parseInt(page, 10),
