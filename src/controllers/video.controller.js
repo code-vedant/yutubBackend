@@ -28,6 +28,32 @@ const getAllVideos = asyncHandler(async (req, res) => {
   pipeline.push({
     $sort: { [sortField]: sortOrder },
   });
+  pipeline.push({
+    $lookup: {
+      from: "users",
+      localField: "owner",
+      foreignField: "_id",
+      as: "ownerData"
+    }
+  })
+
+  pipeline.push({ $unwind: { path: "$ownerData", preserveNullAndEmptyArrays: true } });
+
+  pipeline.push({
+    $project: {
+      title: 1,
+      description: 1,
+      createdAt: 1,
+      duration: 1,
+      thumbnail: 1,
+      videoFile: 1,
+      views: 1,
+      isPublished: 1,
+      owner: 1,
+      "ownerData.fullName": 1,
+      "ownerData.avatar": 1
+    }
+  });
   
   const options = {
     page: parseInt(page, 10),
