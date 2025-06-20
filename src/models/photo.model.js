@@ -15,7 +15,7 @@ const photoSchema = new Schema(
             type: String,
             required: true,
         },
-        views: {
+        likes: {
             type: Number,
             default: 0,
         },

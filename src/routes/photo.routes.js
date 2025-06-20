@@ -14,7 +14,7 @@ const router = Router();
 router.get("/", getPublishedPhotos);
 router.get("/:photoId", getPhotoById);
 router.post("/", verifyJWT,upload.single("photoFile"), uploadPhoto);
-router.put("/:photoId", verifyJWT, updatePhoto);
+router.put("/:photoId", verifyJWT,upload.single("photoFile"), updatePhoto);
 router.delete("/:photoId", verifyJWT, deletePhoto);
 router.get("/my-photos", verifyJWT, getMyPhotos);
 

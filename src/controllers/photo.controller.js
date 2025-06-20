@@ -6,7 +6,11 @@ import {  uploadBufferToCloudinary } from "../utils/cloudinary.js"
 
 // Upload a new photo
 const uploadPhoto = asyncHandler(async (req, res) => {
-  const { photoFile, title, description } = req.body;
+  const { title, description } = req.body;
+  const photoFile = req.file;
+
+  console.log(photoFile);
+  
 
   if (!photoFile) {
     return res
@@ -135,31 +139,40 @@ const updatePhoto = asyncHandler(async (req, res) => {
   const { photoId } = req.params;
   const { title, description, isPublished } = req.body;
 
+  console.log(req.body);
+  
+  
+
   if (!isValidObjectId(photoId)) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid photo ID" });
+    return res.status(400).json({ success: false, message: "Invalid photo ID" });
+  }
+
+  const updateFields = {};
+  if (title !== undefined) updateFields.title = title;
+  if (description !== undefined) updateFields.description = description;
+  if (isPublished !== undefined) updateFields.isPublished = isPublished;
+
+  if (req.file) {
+    const photo = req.file
+    updateFields.photoFile = uploadBufferToCloudinary(photo.buffer, "photos"); 
   }
 
   const photo = await Photo.findOneAndUpdate(
     { _id: photoId, owner: req.user._id },
-    { title, description, isPublished },
+    updateFields,
     { new: true }
   );
 
   if (!photo) {
-    return res
-      .status(404)
-      .json({
-        success: false,
-        message: "Photo not found or not owned by user",
-      });
+    return res.status(404).json({
+      success: false,
+      message: "Photo not found or not owned by user",
+    });
   }
 
-  return res
-    .status(200)
-    .json(new apiResponse(200, photo, "Photo updated successfully"));
+  return res.status(200).json(new apiResponse(200, photo, "Photo updated successfully"));
 });
+
 
 // Delete a photo
 const deletePhoto = asyncHandler(async (req, res) => {

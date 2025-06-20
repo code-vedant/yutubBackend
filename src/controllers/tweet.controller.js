@@ -4,6 +4,55 @@ import { User } from "../models/user.model.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
+const getAllTweets = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, search = "", sortBy, sortType } = req.query;
+
+  const cleanedSearch = search.replace(/-/g, " ").trim();
+
+  const pipeline = [];
+
+  if (cleanedSearch) {
+    pipeline.push({
+      $match: {
+        content: { $regex: cleanedSearch, $options: "i" },
+      },
+    });
+  }
+
+  pipeline.push(
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "ownerDetails",
+      },
+    },
+    {
+      $unwind: "$ownerDetails",
+    },
+    {
+      $sort: { createdAt: -1 }, 
+    },
+    {
+      $skip: (page - 1) * limit,
+    },
+    {
+      $limit: parseInt(limit),
+    }
+  );
+
+  const tweets = await Tweet.aggregate(pipeline);
+
+  if (!tweets) {
+    return res.status(500).json(new apiResponse(500, null, "Error while fetching tweets"));
+  }
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, tweets, "All tweets fetched successfully"));
+})
+
 const createTweet = asyncHandler(async (req, res) => {
   const { content } = req.body;
 
@@ -116,4 +165,4 @@ const deleteTweet = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, deletedTweet, "Tweet deleted successfully"));
 });
 
-export { createTweet, getUserTweets, updateTweet, deleteTweet };
+export { getAllTweets,createTweet, getUserTweets, updateTweet, deleteTweet };
