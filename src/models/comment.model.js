@@ -10,6 +10,14 @@ const commentSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "Video",
     },
+    tweet:{
+        type: Schema.Types.ObjectId,
+        ref: "Tweet",
+    },
+    photo:{
+        type: Schema.Types.ObjectId,
+        ref: "Photo",
+    },
     owner: {
         type: Schema.Types.ObjectId,
         ref: "User",

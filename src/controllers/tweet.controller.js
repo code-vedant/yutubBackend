@@ -19,6 +19,9 @@ const getAllTweets = asyncHandler(async (req, res) => {
     });
   }
 
+  const sortField = sortBy || "createdAt";
+  const sortOrder = sortType === "desc" ? -1 : 1;
+
   pipeline.push(
     {
       $lookup: {
@@ -32,7 +35,7 @@ const getAllTweets = asyncHandler(async (req, res) => {
       $unwind: "$ownerDetails",
     },
     {
-      $sort: { createdAt: -1 }, 
+      $sort: { [sortField]: sortOrder }, 
     },
     {
       $skip: (page - 1) * limit,
@@ -42,7 +45,24 @@ const getAllTweets = asyncHandler(async (req, res) => {
     }
   );
 
-  const tweets = await Tweet.aggregate(pipeline);
+  pipeline.push({
+    $project: {
+      content: 1,
+      createdAt: 1,
+      owner: 1,
+      "ownerDetails._id": 1,
+      "ownerDetails.fullName": 1,
+      "ownerDetails.username": 1,
+      "ownerDetails.avatar": 1,
+    },
+  })
+
+  const options = {
+    page: parseInt(page, 10),
+    limit: parseInt(limit, 10),
+  };
+
+  const tweets = await Tweet.aggregatePaginate(Tweet.aggregate(pipeline),options);
 
   if (!tweets) {
     return res.status(500).json(new apiResponse(500, null, "Error while fetching tweets"));
@@ -60,7 +80,25 @@ const createTweet = asyncHandler(async (req, res) => {
     return res.status(400).json(new apiResponse(400, null, "Content is required & cannot be empty"));
   }
 
-  const tweet = await Tweet.create({ content, owner: req.user._id });
+  let imageUrls = [];
+
+  if (req.files && req.files.length > 0) {
+    try {
+      const uploadPromises = req.files.map((file) => 
+        uploadBufferToCloudinary(file.buffer, "tweets")
+      );
+      const uploadResults = await Promise.all(uploadPromises);
+      imageUrls = uploadResults.map(result => result.secure_url);
+    } catch (error) {
+      return res.status(500).json(new apiResponse(500, null, "Image upload failed"));
+    }
+  }
+
+  const tweet = await Tweet.create({
+    content,
+    owner: req.user._id,
+    images: imageUrls, // assuming Tweet schema has images: [String]
+  });
 
   if (!tweet) {
     return res.status(500).json(new apiResponse(500, null, "Tweet creation failed"));
@@ -68,7 +106,7 @@ const createTweet = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .json(new apiResponse(200, tweet, "Tweet created successfully"));
+    .json(new apiResponse(201, tweet, "Tweet created successfully"));
 });
 
 const getUserTweets = asyncHandler(async (req, res) => {
