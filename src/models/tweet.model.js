@@ -7,9 +7,14 @@ const tweetSchema = new Schema({
         required: true,
     },
     likes: {
-        type: Number,
+        type: [Schema.Types.ObjectId],
+        ref: "User",
         default: 0,
     },
+    comments: [{
+        type: Schema.Types.ObjectId,
+        ref: "Comment",
+    }],
     images: {
         type: [String],
         default: [],

@@ -203,4 +203,30 @@ const deleteTweet = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, deletedTweet, "Tweet deleted successfully"));
 });
 
-export { getAllTweets,createTweet, getUserTweets, updateTweet, deleteTweet };
+const toggleLikeTweet = asyncHandler(async (req, res) => {
+  const { tweetId, userId } = req.params;
+
+  if (!isValidObjectId(tweetId) || !isValidObjectId(userId)) {
+    return res.status(400).json(new apiResponse(400, null, "Invalid ID"));
+  }
+
+  const tweet = await Tweet.findById(tweetId);
+
+  if (!tweet) {
+    return res.status(404).json(new apiResponse(404, null, "Tweet not found"));
+  }
+
+  if (tweet.likes.includes(userId)) {
+    tweet.likes.pull(userId);
+  } else {
+    tweet.likes.push(userId);
+  }
+
+  const updatedTweet = await tweet.save();
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, updatedTweet, "Tweet like status toggled successfully"));
+})
+
+export { getAllTweets,createTweet, getUserTweets, updateTweet, deleteTweet,toggleLikeTweet };
