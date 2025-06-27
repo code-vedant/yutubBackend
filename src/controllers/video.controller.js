@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { Video } from "../models/video.model.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { cloudinary } from "../utils/cloudinary.js";
+import { cloudinary, uploadBufferToCloudinary } from "../utils/cloudinary.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType } = req.query;
@@ -242,7 +242,7 @@ const updateVideo = asyncHandler(async (req, res) => {
       );
   }
 
-  const thumbnail = await cloudinary(thumbnailBuffer, `thumbnail_${videoId}`);
+  const thumbnail = await uploadBufferToCloudinary(thumbnailBuffer, `thumbnail_${videoId}`);
 
   if (!thumbnail?.url) {
     return res

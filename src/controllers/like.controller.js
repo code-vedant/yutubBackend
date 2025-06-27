@@ -195,6 +195,45 @@ const getCommentLikes = asyncHandler(async (req, res) => {
   return res.json(new apiResponse(200, likes, "Comment likes fetched successfully"));
 });
 
+const checkVideoLiked = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  const user = req.user._id;
+
+  if (!isValidObjectId(videoId)) {
+    throw new apiError(400, "Invalid video id");
+  }
+
+  const like = await Like.findOne({ video: videoId, likedBy: user });
+
+  return res.json(new apiResponse(200, !!like, "Check liked status successful"));
+});
+
+const checkCommentLiked = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  const user = req.user._id;
+
+  if (!isValidObjectId(commentId)) {
+    throw new apiError(400, "Invalid comment id");
+  }
+
+  const like = await Like.findOne({ comment: commentId, likedBy: user });
+
+  return res.json(new apiResponse(200, !!like, "Check liked status successful"));
+});
+
+const checkTweetLiked = asyncHandler(async (req, res) => {
+  const { tweetId } = req.params;
+  const user = req.user._id;
+
+  if (!isValidObjectId(tweetId)) {
+    throw new apiError(400, "Invalid tweet id");
+  }
+
+  const like = await Like.findOne({ tweet: tweetId, likedBy: user });
+
+  return res.json(new apiResponse(200, !!like, "Check liked status successful"));
+});
+
 
 export {
   toggleCommentLike,
@@ -205,5 +244,8 @@ export {
   getLikedComments,
   getVideoLikes,
   getTweetLikes,
-  getCommentLikes
+  getCommentLikes,
+  checkVideoLiked,
+  checkCommentLiked,
+  checkTweetLiked
 };
