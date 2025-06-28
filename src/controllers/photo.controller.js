@@ -9,8 +9,6 @@ const uploadPhoto = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   const photoFile = req.file;
 
-  console.log(photoFile);
-  
 
   if (!photoFile) {
     return res
@@ -139,9 +137,6 @@ const updatePhoto = asyncHandler(async (req, res) => {
   const { photoId } = req.params;
   const { title, description, isPublished } = req.body;
 
-  console.log(req.body);
-  
-  
 
   if (!isValidObjectId(photoId)) {
     return res.status(400).json({ success: false, message: "Invalid photo ID" });
