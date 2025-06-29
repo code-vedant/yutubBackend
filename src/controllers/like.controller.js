@@ -21,6 +21,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     return res.json(new apiResponse(200, null, "Unliked the video"));
   } else {
     const newLike = await Like.create({ video: videoId, likedBy: user });
+    await newLike.populate("video");
     return res.json(new apiResponse(200, newLike, "Liked the video"));
   }
 });
@@ -40,6 +41,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     return res.json(new apiResponse(200, null, "Unliked the comment"));
   } else {
     const newLike = await Like.create({ comment: commentId, likedBy: user });
+    await newLike.populate("comment");
     return res.json(new apiResponse(200, newLike, "Liked the comment"));
   }
 });
@@ -59,6 +61,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     return res.json(new apiResponse(200, null, "Unliked the tweet"));
   } else {
     const newLike = await Like.create({ tweet: tweetId, likedBy: user });
+    await newLike.populate("tweet");
     return res.json(new apiResponse(200, newLike, "Liked the tweet"));
   }
 });
@@ -67,7 +70,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
   const likedVideos = await Like.find({
     likedBy: req.user._id,
     video: { $ne: null },
-  }).populate("video");
+  }).populate("video likedBy");
 
   return res.json(new apiResponse(200, likedVideos, "Success getting liked videos"));
 });
@@ -76,7 +79,7 @@ const getLikedTweets = asyncHandler(async (req, res) => {
   const likedTweets = await Like.find({
     likedBy: req.user._id,
     tweet: { $ne: null },
-  }).populate("tweet");
+  }).populate("tweet likedBy");
 
   return res.json(new apiResponse(200, likedTweets, "Liked tweets fetched successfully"));
 });
@@ -85,7 +88,7 @@ const getLikedComments = asyncHandler(async (req, res) => {
   const likedComments = await Like.find({
     likedBy: req.user._id,
     comment: { $ne: null },
-  }).populate("comment");
+  }).populate("comment likedBy");
 
   return res.json(new apiResponse(200, likedComments, "Liked comments fetched successfully"));
 });
@@ -103,7 +106,7 @@ const getVideoLikes = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: "users", // name of the collection
+        from: "users",
         localField: "likedBy",
         foreignField: "_id",
         as: "userDetails"
@@ -185,14 +188,14 @@ const getCommentLikes = asyncHandler(async (req, res) => {
     },
     {
       $group: {
-        _id: "$commentLike",
+        _id: "$comment",
         likedUsers: { $push: "$userDetails" },
         totalLikes: { $sum: 1 }
       }
     }
   ]);
 
-  return res.json(new apiResponse(200, likes, "Comment likes fetched successfully"));
+  return res.json(new apiResponse(200, likes[0] || { likedUsers: [], totalLikes: 0 }, "Comment likes fetched successfully"));
 });
 
 const checkVideoLiked = asyncHandler(async (req, res) => {
@@ -233,7 +236,6 @@ const checkTweetLiked = asyncHandler(async (req, res) => {
 
   return res.json(new apiResponse(200, !!like, "Check liked status successful"));
 });
-
 
 export {
   toggleCommentLike,

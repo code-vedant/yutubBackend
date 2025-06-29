@@ -71,6 +71,62 @@ const getAllVideos = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, video, "All video based on query"));
 });
 
+const getUserVideos = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json(new apiResponse(400, null, "Invalid User ID"));
+  }
+
+  let userObjectId;
+  try {
+    userObjectId = new mongoose.Types.ObjectId(userId);
+  } catch {
+    return res
+      .status(400)
+      .json(new apiResponse(400, null, "Invalid User ID format"));
+  }
+
+  const videos = await Video.aggregate([
+    { $match: { owner: userObjectId } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "ownerData",
+      },
+    },
+    { $unwind: { path: "$ownerData", preserveNullAndEmptyArrays: true } },
+    {
+      $project: {
+        _id: 1,
+        title: 1,
+        description: 1,
+        thumbnail: 1,
+        videoFile: 1,
+        duration: 1,
+        views: 1,
+        isPublished: 1,
+        createdAt: 1,
+        ownerData: {
+          _id: "$ownerData._id",
+          fullName: "$ownerData.fullName",
+          avatar: "$ownerData.avatar",
+        },
+      },
+    },
+  ]);
+
+  if (!videos || videos.length === 0) {
+    return res.status(404).json(new apiResponse(404, null, "No videos found"));
+  }
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, videos, "User videos fetched successfully"));
+})
+
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   const thumbnailBuffer = req.files?.thumbnail?.[0]?.buffer;
@@ -301,6 +357,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
 export {
   getAllVideos,
+  getUserVideos,
   publishAVideo,
   getVideoById,
   updateVideo,
