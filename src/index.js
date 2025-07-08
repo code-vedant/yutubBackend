@@ -23,7 +23,7 @@ dotenv.config({
 });
 
 app.use(cors({
-    origin: "*",
+    origin: ["https://yutubapp.netlify.app", "https://yutubapp.vercel.app", "http://localhost:5173", "http://localhost:5174"],
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     credentials: true,
 }));
