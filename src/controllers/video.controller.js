@@ -355,6 +355,93 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, video, "Video status updated successfully"));
 });
 
+const addVideoToWatchHistory = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    return res.status(400).json(new apiResponse(400, null, "Invalid video id"));
+  }
+
+  let videoObjectId;
+  try {
+    videoObjectId = new mongoose.Types.ObjectId(videoId);
+  } catch {
+    return res
+      .status(400)
+      .json(new apiResponse(400, null, "Invalid Video ID format"));
+  }
+
+  const video = await Video.findById(videoObjectId);
+  if (!video) {
+    return res.status(404).json(new apiResponse(404, null, "Video not found"));
+  }
+
+  const user = req.user;
+  if (!user) {
+    return res.status(401).json(new apiResponse(401, null, "Unauthorized"));
+  }
+
+  const index = user.watchHistory.findIndex(
+    (id) => id.toString() === videoId.toString()
+  );
+
+  if (index !== -1) {
+    // Remove the existing entry
+    user.watchHistory.splice(index, 1);
+  }
+
+  // Add videoId to the front
+  user.watchHistory.unshift(videoObjectId);
+
+  // Save updated user document
+  await user.save();
+
+  return res.status(200).json(
+    new apiResponse(200, video, "Video added to watch history")
+  );
+});
+
+const removeVideoFromWatchHistory = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    return res.status(400).json(new apiResponse(400, null, "Invalid video id"));
+  }
+
+  let videoObjectId;
+  try {
+    videoObjectId = new mongoose.Types.ObjectId(videoId);
+  } catch {
+    return res
+      .status(400)
+      .json(new apiResponse(400, null, "Invalid Video ID format"));
+  }
+
+  const user = req.user;
+  if (!user) {
+    return res.status(401).json(new apiResponse(401, null, "Unauthorized"));
+  }
+
+  const index = user.watchHistory.findIndex(
+    (id) => id.toString() === videoId.toString()
+  );
+
+  if (index === -1) {
+    return res.status(404).json(new apiResponse(404, null, "Video not found in watch history"));
+  }
+
+  // Remove the video from watch history
+  user.watchHistory.splice(index, 1);
+
+  // Save updated user document
+  await user.save();
+
+  return res.status(200).json(
+    new apiResponse(200, null, "Video removed from watch history")
+  );
+})
+
+
 export {
   getAllVideos,
   getUserVideos,
@@ -363,4 +450,6 @@ export {
   updateVideo,
   deleteVideo,
   togglePublishStatus,
+  addVideoToWatchHistory,
+  removeVideoFromWatchHistory
 };
