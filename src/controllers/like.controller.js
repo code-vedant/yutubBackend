@@ -66,6 +66,26 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
   }
 });
 
+const togglePhotoLike = asyncHandler(async (req,res) => {
+  const { photoId } = req.params;
+  const user = req.user._id;
+
+  if (!isValidObjectId(photoId)) {
+    throw new apiError(400, "Invalid photo id");
+  }
+
+  const like = await Like.findOne({ photo: photoId, likedBy: user });
+
+  if (like) {
+    await like.deleteOne();
+    return res.json(new apiResponse(200, null, "Unliked the photo"));
+  } else {
+    const newLike = await Like.create({ photo: photoId, likedBy: user });
+    await newLike.populate("photo");
+    return res.json(new apiResponse(200, newLike, "Liked the photo"));
+  }
+})
+
 const getLikedVideos = asyncHandler(async (req, res) => {
   const likedVideos = await Like.find({
     likedBy: req.user._id,
@@ -92,6 +112,15 @@ const getLikedComments = asyncHandler(async (req, res) => {
 
   return res.json(new apiResponse(200, likedComments, "Liked comments fetched successfully"));
 });
+
+const getLikedPhotos = asyncHandler(async (req, res) => {
+  const likedPhotos = await Like.find({
+    likedBy: req.user._id,
+    photo: { $ne: null },
+  }).populate("photo likedBy");
+
+  return res.json(new apiResponse(200, likedPhotos, "Liked photos fetched successfully"));
+})
 
 const getVideoLikes = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -198,6 +227,40 @@ const getCommentLikes = asyncHandler(async (req, res) => {
   return res.json(new apiResponse(200, likes[0] || { likedUsers: [], totalLikes: 0 }, "Comment likes fetched successfully"));
 });
 
+const getPhotoLikes = asyncHandler(async (req, res) => {
+  const { photoId } = req.params;
+
+  if (!isValidObjectId(photoId)) {
+    throw new apiError(400, "Invalid photo id");
+  }
+
+  const likes = await Like.aggregate([
+    {
+      $match: { photo: new mongoose.Types.ObjectId(photoId) }
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "likedBy",
+        foreignField: "_id",
+        as: "userDetails"
+      }
+    },
+    {
+      $unwind: "$userDetails"
+    },
+    {
+      $group: {
+        _id: "$photo",
+        likedUsers: { $push: "$userDetails" },
+        totalLikes: { $sum: 1 }
+      }
+    }
+  ]);
+
+  return res.json(new apiResponse(200, likes[0] || { likedUsers: [], totalLikes: 0 }, "Photo likes fetched successfully"));
+})
+
 const checkVideoLiked = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const user = req.user._id;
@@ -237,6 +300,19 @@ const checkTweetLiked = asyncHandler(async (req, res) => {
   return res.json(new apiResponse(200, !!like, "Check liked status successful"));
 });
 
+const checkPhotoLiked = asyncHandler(async (req, res) => {
+  const { photoId } = req.params;
+  const user = req.user._id;
+
+  if (!isValidObjectId(photoId)) {
+    throw new apiError(400, "Invalid photo id");
+  }
+
+  const like = await Like.findOne({ photo: photoId, likedBy: user });
+
+  return res.json(new apiResponse(200, !!like, "Check liked status successful"));
+})
+
 export {
   toggleCommentLike,
   toggleTweetLike,
@@ -249,5 +325,9 @@ export {
   getCommentLikes,
   checkVideoLiked,
   checkCommentLiked,
-  checkTweetLiked
+  checkTweetLiked,
+  getLikedPhotos,
+  togglePhotoLike,
+  getPhotoLikes,
+  checkPhotoLiked
 };

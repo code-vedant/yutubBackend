@@ -18,6 +18,10 @@ const likeSchema = new Schema(
         type: Schema.Types.ObjectId,
         ref: "Comment",
     },
+    photo: {
+      type: Schema.Types.ObjectId,
+      ref: "Photo",
+    }
   },
   { timestamps: true }
 );
