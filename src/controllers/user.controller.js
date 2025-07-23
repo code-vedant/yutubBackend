@@ -103,17 +103,18 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   const accessToken = generateAccessToken(user._id, res);
+  
   const loggedInUser = await User.findById(user._id).select("-password");
 
   return res.status(200).json(new apiResponse(200, { user: loggedInUser, accessToken }, "User logged in successfully"));
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  await User.findByIdAndUpdate(req.user._id, { $set: { refreshToken: undefined } });
+  await User.findByIdAndUpdate(req.user._id, { $set: { accessToken: undefined } });
 
   const options = { httpOnly: true, secure: true };
 
-  return res.status(200).clearCookie("accessToken", options).clearCookie("refreshToken", options).json(new apiResponse(200, {}, "User logged out successfully"));
+  return res.status(200).clearCookie("accessToken", options).json(new apiResponse(200, {}, "User logged out successfully"));
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
