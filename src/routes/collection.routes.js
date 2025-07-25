@@ -27,8 +27,8 @@ router
     .patch(updateCollection)
     .delete(deleteCollection);
 
-router.route("/add/:videoId/:collectionId").patch(addPhotoToCollection);
-router.route("/remove/:videoId/:collectionId").patch(removePhotoFromCollection);
+router.route("/add/:photoId/:collectionId").patch(addPhotoToCollection);
+router.route("/remove/:photoId/:collectionId").patch(removePhotoFromCollection);
 
 
 export default router

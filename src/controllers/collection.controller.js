@@ -60,15 +60,15 @@ const getUserCollections = asyncHandler(async (req, res) => {
 });
 
 const getCollectionById = asyncHandler(async (req, res) => {
-  const { CollectionId } = req.params;
+  const { collectionId } = req.params;
 
-  if (!isValidObjectId(CollectionId)) {
+  if (!isValidObjectId(collectionId)) {
     return res
       .status(400)
       .json(new apiResponse(400, null, "Invalid Collection id"));
   }
 
-  const collection = await Collection.findById(CollectionId);
+  const collection = await Collection.findById(collectionId);
 
   if (!collection) {
     return res
@@ -82,16 +82,19 @@ const getCollectionById = asyncHandler(async (req, res) => {
 });
 
 const addPhotoToCollection = asyncHandler(async (req, res) => {
-  const { CollectionId, photoId } = req.params;
+  const { photoId,collectionId  } = req.params;
 
-  if (!isValidObjectId(CollectionId) || !isValidObjectId(photoId)) {
+  console.log("Adding photo to collection:", collectionId, photoId);
+  
+
+  if (!isValidObjectId(collectionId) || !isValidObjectId(photoId)) {
     return res
       .status(400)
-      .json(new apiResponse(400, null, "Invalid Collection or video id"));
+      .json(new apiResponse(400, null, "Invalid Collection or photo id"));
   }
 
   const collection = await Collection.findByIdAndUpdate(
-    CollectionId,
+    collectionId,
     { $push: { photos: new mongoose.Types.ObjectId(photoId) } },
     { new: true }
   );
@@ -105,21 +108,21 @@ const addPhotoToCollection = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new apiResponse(200, collection, "Video added to Collection successfully")
+      new apiResponse(200, collection, "Photo added to Collection successfully")
     );
 });
 
 const removePhotoFromCollection = asyncHandler(async (req, res) => {
-  const { CollectionId, photoId } = req.params;
+  const { collectionId, photoId } = req.params;
 
-  if (!isValidObjectId(CollectionId) || !isValidObjectId(photoId)) {
+  if (!isValidObjectId(collectionId) || !isValidObjectId(photoId)) {
     return res
       .status(400)
-      .json(new apiResponse(400, null, "Invalid Collection or video id"));
+      .json(new apiResponse(400, null, "Invalid Collection or collection id"));
   }
 
   const collection = await Collection.findByIdAndUpdate(
-    CollectionId,
+    collectionId,
     { $pull: { photos: photoId } },
     { new: true }
   );
@@ -136,21 +139,21 @@ const removePhotoFromCollection = asyncHandler(async (req, res) => {
       new apiResponse(
         200,
         collection,
-        "Video removed from Collection successfully"
+        "Photo removed from Collection successfully"
       )
     );
 });
 
 const deleteCollection = asyncHandler(async (req, res) => {
-  const { CollectionId } = req.params;
+  const { collectionId } = req.params;
 
-  if (!isValidObjectId(CollectionId)) {
+  if (!isValidObjectId(collectionId)) {
     return res
       .status(400)
       .json(new apiResponse(400, null, "Invalid Collection id"));
   }
 
-  const collection = await Collection.findByIdAndDelete(CollectionId);
+  const collection = await Collection.findByIdAndDelete(collectionId);
 
   if (!collection) {
     return res
@@ -164,10 +167,10 @@ const deleteCollection = asyncHandler(async (req, res) => {
 });
 
 const updateCollection = asyncHandler(async (req, res) => {
-  const { CollectionId } = req.params;
+  const { collectionId } = req.params;
   const { name, description } = req.body;
 
-  if (!isValidObjectId(CollectionId)) {
+  if (!isValidObjectId(collectionId)) {
     return res
       .status(400)
       .json(new apiResponse(400, null, "Invalid Collection id"));
@@ -185,7 +188,7 @@ const updateCollection = asyncHandler(async (req, res) => {
   }
 
   const collection = await Collection.findByIdAndUpdate(
-    CollectionId,
+    collectionId,
     { name, description },
     { new: true }
   );
