@@ -117,10 +117,21 @@ const getLikedPhotos = asyncHandler(async (req, res) => {
   const likedPhotos = await Like.find({
     likedBy: req.user._id,
     photo: { $ne: null },
-  }).populate("photo likedBy");
+  })
+    .populate({
+      path: "photo",
+      populate: {
+        path: "owner",
+        select: "username avatar",
+      },
+    })
+    .populate("likedBy", "username avatar");
 
-  return res.json(new apiResponse(200, likedPhotos, "Liked photos fetched successfully"));
-})
+  return res.json(
+    new apiResponse(200, likedPhotos, "Liked photos fetched successfully")
+  );
+});
+
 
 const getVideoLikes = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
