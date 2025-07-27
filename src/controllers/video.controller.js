@@ -153,8 +153,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
       .json(new apiResponse(400, null, "Video is required"));
   }
 
-  const thumbnail = await cloudinary(thumbnailBuffer, `thumbnail_${title}`);
-  const video = await cloudinary(videoBuffer, `video_${title}`);
+  const thumbnail = await uploadBufferToCloudinary(thumbnailBuffer, `thumbnail_${title}`);
+  const video = await uploadBufferToCloudinary(videoBuffer, `video_${title}`);
 
   if (!thumbnail?.url) {
     return res
@@ -170,8 +170,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
   const newVideo = await Video.create({
     title,
     description,
-    thumbnail: thumbnail.url,
-    videoFile: video.url,
+    thumbnail: thumbnail.secure_url || thumbnail.url,
+    videoFile: video.secure_url || video.url,
     duration: video.duration,
     owner: req.user._id,
   });
