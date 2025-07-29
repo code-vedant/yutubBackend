@@ -119,7 +119,7 @@ const getUserVideos = asyncHandler(async (req, res) => {
   ]);
 
   if (!videos || videos.length === 0) {
-    return res.status(404).json(new apiResponse(404, null, "No videos found"));
+    return res.status(200).json(new apiResponse(200, [], "User has no Video or video not found"));
   }
 
   return res
