@@ -207,6 +207,24 @@ const getMyPhotos = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, photos, "Photos fetched successfully"));
 });
 
+const getUserPhotos = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  if (!isValidObjectId(userId)) {
+    return res.status(400).json({ success: false, message: "Invalid user ID" });
+  }
+
+  const photos = await Photo.find({ owner: userId });
+
+  if (!photos || photos.length === 0) {
+    return res.status(200).json(new apiResponse(200, [], "User has no photos or not found"));
+  }
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, photos, "Photos fetched successfully"));
+})
+
 export {
   uploadPhoto,
   getPublishedPhotos,
@@ -214,4 +232,5 @@ export {
   updatePhoto,
   deletePhoto,
   getMyPhotos,
+  getUserPhotos
 };

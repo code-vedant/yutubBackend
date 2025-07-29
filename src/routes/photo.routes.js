@@ -5,7 +5,8 @@ import { uploadPhoto,
     getPhotoById,
     updatePhoto,
     deletePhoto,
-    getMyPhotos, } from "../controllers/photo.controller.js";
+  getUserPhotos,
+  getMyPhotos, } from "../controllers/photo.controller.js";
     import { upload } from "../middlewares/multer.middlerware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -13,6 +14,7 @@ const router = Router();
 
 router.get("/", getPublishedPhotos);
 router.get("/:photoId", getPhotoById);
+router.get("/user/:userId", getUserPhotos);
 router.post("/", verifyJWT,upload.single("photoFile"), uploadPhoto);
 router.put("/:photoId", verifyJWT,upload.single("photoFile"), updatePhoto);
 router.delete("/:photoId", verifyJWT, deletePhoto);
